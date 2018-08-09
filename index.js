@@ -20,12 +20,12 @@ var router = new Router();
 
 app.use(bodyParser())
 
-router.get('/', (ctx, next) => {
+router.get('/fxxk-now-news', (ctx, next) => {
     // ctx.router available
     ctx.body = 'Fuck Now News'
 });
 
-router.get('/redirect/:id', (ctx, next) => {
+router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
     if(!Number(ctx.params.id))
         return next()
     
@@ -40,7 +40,7 @@ router.get('/redirect/:id', (ctx, next) => {
     })
 })
 
-router.post('/add', (ctx, next) => {
+router.post('/fxxk-now-news/add', (ctx, next) => {
     let postData = ctx.request.body
     if(typeof postData === 'object') {
         // Valid?
