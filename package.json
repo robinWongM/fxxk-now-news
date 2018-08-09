@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "koa": "^2.5.2",
+    "koa-bodyparser": "^4.2.1",
+    "koa-router": "^7.4.0",
+    "redis": "^2.8.0"
+  },
+  "name": "fxxk-now-news",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/robinWongM/fxxk-now-news.git",
+  "author": "Robin Wong <chaowang0313@gmail.com>",
+  "license": "WTFPL"
+}
