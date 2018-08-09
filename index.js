@@ -1,3 +1,5 @@
+var config = require('./config.js')
+
 var redis = require("redis"),
     client = redis.createClient();
 
@@ -12,8 +14,6 @@ client.auth(config.password, (err, response) => {
 var Koa = require('koa');
 var Router = require('koa-router');
 var bodyParser = require('koa-bodyparser');
-
-var config = require('./config.js')
 
 var app = new Koa();
 var router = new Router();
