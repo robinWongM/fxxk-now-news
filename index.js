@@ -40,6 +40,7 @@ router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
         } else {
             console.log(url)
             ctx.redirect(url)
+            ctx.body = 'Redirecting to NOW NEWS...'
         }
 
         next()
