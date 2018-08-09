@@ -38,6 +38,7 @@ router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
         } else if(!url) {
             ctx.body = "ID not exists"
         } else {
+            console.log(url)
             ctx.redirect(url)
         }
 
