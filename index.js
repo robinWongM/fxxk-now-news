@@ -26,10 +26,13 @@ router.get('/fxxk-now-news', (ctx, next) => {
 });
 
 router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
+    console.log('received redirect request')
+
     if(!Number(ctx.params.id))
         return next()
     
     client.get(ctx.params.id, (err, url) => {
+        console.log('got redirect callback')
         if(err) {
             ctx.body = "Server Error"
         } else if(!url) {
@@ -37,6 +40,8 @@ router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
         } else {
             ctx.redirect(url)
         }
+
+        next()
     })
 })
 
@@ -46,6 +51,7 @@ router.post('/fxxk-now-news/add', (ctx, next) => {
         // Valid?
         if(postData.title && postData.url && postData.token === config.token) {
             //Valid
+            console.log('received: ' + postData.title + postData.url)
             client.zrank('news', postData.title, (err, response) => {
                 if(response) {
                     // Fuck NOW NEWS & update url
