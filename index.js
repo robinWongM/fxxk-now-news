@@ -29,7 +29,7 @@ router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
     if(!Number(ctx.params.id))
         return next()
     
-    client.get(id, (err, url) => {
+    client.get(ctx.params.id, (err, url) => {
         if(err) {
             ctx.body = "Server Error"
         } else if(!url) {
