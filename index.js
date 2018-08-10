@@ -3,6 +3,13 @@ var config = require('./config.js')
 var redis = require("redis"),
     client = redis.createClient();
 
+const {promisify} = require('util');
+const getAsync = promisify(client.get).bind(client)
+const setAsync = promisify(client.set).bind(client)
+const zrankAsync = promisify(client.zrank).bind(client)
+const zaddAsync = promisify(client.zadd).bind(client)
+const incrAsync = promisify(client.incr).bind(client)
+
 client.auth(config.password, (err, response) => {
     if(err) {
         console.error('Connect failed')
@@ -16,98 +23,83 @@ var Router = require('koa-router');
 var bodyParser = require('koa-bodyparser');
 
 var app = new Koa();
-var router = new Router();
+var router = new Router({
+    prefix: '/fxxk-now-news'
+});
 
 app.use(bodyParser())
 
-router.get('/fxxk-now-news', (ctx, next) => {
+router.get('/', (ctx, next) => {
     // ctx.router available
     ctx.body = 'Fuck Now News'
 });
 
-router.get('/fxxk-now-news/redirect/:id', (ctx, next) => {
+router.get('/redirect/:id', async (ctx, next) => {
     console.log('received redirect request')
 
-    if(!Number(ctx.params.id))
-        return next()
-    
-    client.get(ctx.params.id, (err, url) => {
-        console.log('got redirect callback')
-        if(err) {
+    if(!Number(ctx.params.id)) {
+        ctx.status = 400
+        ctx.body = "Invalid Request"
+    } else {
+        let url
+        try {
+            url = await getAsync('url:' + ctx.params.id)
+        } catch (err) {
+            ctx.status = 500
             ctx.body = "Server Error"
-        } else if(!url) {
-            ctx.body = "ID not exists"
+            return
+        }
+        
+        if(!url) {
+            ctx.status = 404
+            ctx.body = "ID not exist"
         } else {
             console.log(url)
+            await incrAsync('views:' + url)
             ctx.redirect(url)
-            ctx.body = 'Redirecting to NOW NEWS...'
         }
 
         next()
-    })
+    }
 })
 
-router.post('/fxxk-now-news/add', (ctx, next) => {
+router.post('/add', async (ctx, next) => {
     let postData = ctx.request.body
-    if(typeof postData === 'object') {
-        // Valid?
-        if(postData.title && postData.url && postData.token === config.token) {
-            //Valid
-            console.log('received: ' + postData.title + postData.url)
-            client.zrank('news', postData.title, (err, response) => {
-                if(response) {
-                    // Fuck NOW NEWS & update url
-                    client.get('url:' + postData.title, (err, id) => {
-                        if(err || !id) {
-                            ctx.body = JSON.stringify({
-                                code: -1,
-                                url: postData.url
-                            })
-                        } else {
-                            // Change
-                            client.set(id, postData.url)
-                            console.log('changed ' + postData.title)
-                            ctx.body = JSON.stringify({
-                                code: 1,
-                                url: 'https://service.rwong.cc/fxxk-now-news/redirect/' + id
-                            })
-                        }
-                    })
-                } else {
-                // Alright
-                    client.zadd(
-                        ['news', Date.now(), postData.title],
-                        (err, response) => {
-                            if (err) {
-                                ctx.body = JSON.stringify({
-                                    code: -1,
-                                    url: postData.url
-                                })
-                            } else {
-                                // Get unique id
-                                client.incr('id', (err, id) => {
-                                    if (err) {
-                                        ctx.body = JSON.stringify({
-                                            code: -1,
-                                            url: postData.url
-                                        })
-                                    } else {
-                                        client.set(id, postData.url)
-                                        client.set('url:' + postData.title, id)
-                                        console.log('added ' + postData.title);
-                                        ctx.body = JSON.stringify({
-                                            code: 0,
-                                            url: 'https://service.rwong.cc/fxxk-now-news/redirect/' + id
-                                        })
-                                    }
+    if(typeof postData === 'object' && postData.title && postData.url && postData.token === config.token) {
+        console.log('received add request: ' + postData.title)
+        console.log('add the url is ' + postData.url)
+        try {
+            let id = await getAsync('postid:' + postData.title)
+            console.log(id)
+            if(id) {
+                // Fuck Now News
+                await setAsync('url:' + id, postData.url)
+                await setAsync('lastmodified:' + id, Date.now())
 
-                                })
-                            }
-                        }
-                    )
-                }
+                ctx.status = 200
+                ctx.body = JSON.stringify({
+                    code: 1,
+                    url: 'https://service.rwong.cc/fxxk-now-news/redirect/' + id
+                })
+            } else {
+                id = await incrAsync('counter')
+                await setAsync('postid:' + postData.title, id, 'EX', 604800) // expire after 1 week
+                await setAsync('url:' + id, postData.url)
+                await setAsync('created:' + id, Date.now())
+
+                ctx.status = 200
+                ctx.body = JSON.stringify({
+                    code: 0,
+                    url: 'https://service.rwong.cc/fxxk-now-news/redirect/' + id
+                })
+            }
+        } catch (err) {
+            console.error(err)
+            ctx.status = 500
+            ctx.body = JSON.stringify({
+                code: -1,
+                url: postData.url
             })
-
         }
     }
 
