@@ -34,4 +34,16 @@ app.get("/redirect/:id", async (c) => {
   return c.redirect(url, 301);
 });
 
+app.post("/add", async (c) => {
+  const { url } = await c.req.json<{
+    title: string;
+    url: string;
+  }>();
+
+  return c.json({
+    code: 0,
+    url,
+  });
+});
+
 export default app;
