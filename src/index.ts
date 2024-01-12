@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "hono/adapter";
 
-const app = new Hono();
+const app = new Hono().basePath("/fxxk-now-news");
 
 app.get("/redirect/:id", async (c) => {
   const { SUPABASE_URL, SUPABASE_KEY } = env<{
@@ -11,18 +11,26 @@ app.get("/redirect/:id", async (c) => {
   }>(c);
   const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const id = parseInt(c.req.param('id'));
-  const { data, error } = await client.from('urls').select('*').eq('id', id);
+  const id = parseInt(c.req.param("id"));
+  const { data, error } = await client
+    .from("urls")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error) {
-    throw new Error('Internal Server Error');
+    throw new Error("Internal Server Error");
   }
 
-  if (!data.length) {
+  if (!data) {
     return c.notFound();
   }
 
-  const url = data[0].url;
+  const url = data.url;
+  c.executionCtx.waitUntil(
+    Promise.all([client.rpc("increment_views", { row_id: id })])
+  );
+
   return c.redirect(url, 301);
 });
 
