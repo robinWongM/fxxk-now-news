@@ -1,15 +1,14 @@
 {
-  "dependencies": {
-    "got": "^9.0.0",
-    "koa": "^2.5.2",
-    "koa-bodyparser": "^4.2.1",
-    "koa-router": "^7.4.0",
-    "redis": "^3.1.1"
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts"
   },
-  "name": "fxxk-now-news",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://github.com/robinWongM/fxxk-now-news.git",
-  "author": "Robin Wong <chaowang0313@gmail.com>",
-  "license": "WTFPL"
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "hono": "^3.12.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "wrangler": "^3.22.0"
+  }
 }
