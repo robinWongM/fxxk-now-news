@@ -1,37 +1,37 @@
 import { Hono } from "hono";
-import { createClient } from "@supabase/supabase-js";
 import { env } from "hono/adapter";
+
+type Bindings = {
+  DB: D1Database;
+};
 
 const app = new Hono().basePath("/fxxk-now-news");
 
 app.get("/redirect/:id", async (c) => {
-  const { SUPABASE_URL, SUPABASE_KEY } = env<{
-    SUPABASE_URL: string;
-    SUPABASE_KEY: string;
-  }>(c);
-  const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { DB } = env<Bindings>(c);
+  const id = c.req.param("id");
 
-  const id = parseInt(c.req.param("id"));
-  const { data, error } = await client
-    .from("urls")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    throw new Error("Internal Server Error");
-  }
-
-  if (!data) {
+  if (!/^\d+$/.test(id)) {
     return c.notFound();
   }
 
-  const url = data.url;
+  const row = await DB.prepare("SELECT url FROM urls WHERE id = ?")
+    .bind(id)
+    .first<{ url: string }>();
+
+  if (!row) {
+    return c.notFound();
+  }
+
   c.executionCtx.waitUntil(
-    Promise.all([client.rpc("increment_views", { row_id: id })])
+    DB.prepare(
+      "UPDATE urls SET views = views + 1, modified_at = CURRENT_TIMESTAMP WHERE id = ?"
+    )
+      .bind(id)
+      .run()
   );
 
-  return c.redirect(url, 301);
+  return c.redirect(row.url, 301);
 });
 
 app.post("/add", async (c) => {

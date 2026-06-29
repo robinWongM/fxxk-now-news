@@ -1,0 +1,10 @@
+name = "fxxk-now-news"
+main = "src/index.ts"
+compatibility_date = "2026-06-29"
+workers_dev = true
+minify = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fxxk-now-news"
+database_id = "599cc471-8147-43dd-a7c4-f8c4bbc71723"
