@@ -1,49 +1,54 @@
-import { Hono } from "hono";
-import { env } from "hono/adapter";
-
 type Bindings = {
   DB: D1Database;
 };
 
-const app = new Hono().basePath("/fxxk-now-news");
+export default {
+  async fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
+    const url = new URL(request.url);
 
-app.get("/redirect/:id", async (c) => {
-  const { DB } = env<Bindings>(c);
-  const id = c.req.param("id");
+    if (request.method === "GET" || request.method === "HEAD") {
+      const match = url.pathname.match(/^\/fxxk-now-news\/redirect\/(\d+)$/);
+      if (match) {
+        return redirect(match[1], env, ctx);
+      }
+    }
 
-  if (!/^\d+$/.test(id)) {
-    return c.notFound();
-  }
+    if (request.method === "POST" && url.pathname === "/fxxk-now-news/add") {
+      return add(request);
+    }
 
-  const row = await DB.prepare("SELECT url FROM urls WHERE id = ?")
+    return new Response("Not Found", { status: 404 });
+  },
+};
+
+async function redirect(id: string, env: Bindings, ctx: ExecutionContext) {
+  const row = await env.DB.prepare("SELECT url FROM urls WHERE id = ?")
     .bind(id)
     .first<{ url: string }>();
 
   if (!row) {
-    return c.notFound();
+    return new Response("Not Found", { status: 404 });
   }
 
-  c.executionCtx.waitUntil(
-    DB.prepare(
+  ctx.waitUntil(
+    env.DB.prepare(
       "UPDATE urls SET views = views + 1, modified_at = CURRENT_TIMESTAMP WHERE id = ?"
     )
       .bind(id)
       .run()
   );
 
-  return c.redirect(row.url, 301);
-});
+  return Response.redirect(row.url, 301);
+}
 
-app.post("/add", async (c) => {
-  const { url } = await c.req.json<{
+async function add(request: Request) {
+  const { url } = await request.json<{
     title: string;
     url: string;
   }>();
 
-  return c.json({
+  return Response.json({
     code: 0,
     url,
   });
-});
-
-export default app;
+}

@@ -3,9 +3,7 @@
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy"
   },
-  "dependencies": {
-    "hono": "^3.12.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260629.1",
     "typescript": "^6.0.3",
