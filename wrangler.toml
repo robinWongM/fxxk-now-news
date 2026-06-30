@@ -4,6 +4,12 @@ compatibility_date = "2026-06-29"
 workers_dev = true
 minify = true
 
+[observability]
+enabled = true
+
+[observability.logs]
+invocation_logs = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "fxxk-now-news"
